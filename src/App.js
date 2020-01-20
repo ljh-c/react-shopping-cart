@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Route } from 'react-router-dom';
 import data from './data';
 
@@ -12,16 +12,38 @@ import { CartContext } from './contexts/CartContext';
 
 function App() {
 	const [products] = useState(data);
-	const [cart, setCart] = useState([]);
+	const [cart, setCart] = useState(() => {
+		const item = localStorage.getItem('user_cart');
+    return item ? JSON.parse(item) : [];
+	});
 
 	const addItem = item => {
 		setCart([...cart, item]);
 	};
 
+	const removeItem = itemId => {
+		setCart(cart.filter(item => item.id !== itemId));
+	};
+
+	useEffect(() => {
+		const handleLeavePage = event => {
+			event.preventDefault();
+
+			localStorage.setItem('user_cart', JSON.stringify(cart));
+		};
+
+		// save cart to storage on page refresh or leave
+		window.addEventListener('beforeunload', handleLeavePage);
+
+		return () => {
+			window.removeEventListener('beforeunload', handleLeavePage);
+		};
+	}, [cart]);
+
 	return (
 		<div className="App">
-			<ProductContext.Provider value={{ products, addItem }}>
-			<CartContext.Provider value={cart}>
+			<ProductContext.Provider value={{products, addItem}}>
+			<CartContext.Provider value={{cart, removeItem}}>
 
 				<Navigation />
 
